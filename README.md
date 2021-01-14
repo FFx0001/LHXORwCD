@@ -1,4 +1,8 @@
-# LHXORwCD (Long Hash XOR With Control Difficality Chiper)
+# LHXORwCD 
+
+(Long Hash XOR With Control Difficality Chiper)
+================================================================================================================================================================================
+
 Симметричный алгоритм шифрования, основанный на операциях Hash и XOR при этом Hash функция выступает в роли генератора непредсказуемого шума в качестве ключа симметричного длинне сообщения для последующей операции XOR. А так же алгоритм снабжен механизмом контроля вычислительной сложности, что позволяет гибко настраивать алгоритм на быстроту работы или же наоборот на усложнение возможности атаки подбором парольной фразы, реализации так же присутствует несколько режимов реализованных на базе этого линейного шифра.
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Основные особенности симметричным алгоритма шифрования LHXORwCD:
@@ -95,40 +99,40 @@
  =================================================================================================================================================
  Примеры реализации кода на базе разработанного класса с методами шифрования
 
-            byte[] Message = Encoding.UTF8.GetBytes("кодируемое сообщение");
-            byte[] Password = Encoding.UTF8.GetBytes("парольная фраза");
-            int BlockSize = 16;
-            int MaxDifficallity = 256;
-            Console.WriteLine("Original text:");
-            Console.WriteLine(Encoding.UTF8.GetString(Message));
-            
-            LHXORwCD _LHXORwCD = new LHXORwCD();
-            // LinearChipher алгоритм
-            byte[] EncryptedС = _LHXORwCD.LinearChipher(Message, Password, true, MaxDifficallity);
-            Console.WriteLine("EnCrypted: " + _LHXORwCD.BytesToHex(EncryptedС, " "));
-            byte[] DecryptedС = _LHXORwCD.LinearChipher(EncryptedС, Password, false, MaxDifficallity);
-            Console.WriteLine("DeCrypted: " + Encoding.UTF8.GetString(DecryptedС));
-            
-            // BLinearChipher алгоритм
-            byte[] EncryptedD = _LHXORwCD.BLinearChipher(Message, Password, true, BlockSize, MaxDifficallity);
-            Console.WriteLine("EnCrypted: " + _LHXORwCD.BytesToHex(EncryptedD, " "));
-            byte[] DecryptedD = _LHXORwCD.BLinearChipher(EncryptedD, Password, false, BlockSize, MaxDifficallity);
-            Console.WriteLine("DeCrypted: " + Encoding.UTF8.GetString(DecryptedD));
-            
-            // MLinearChipher алгоритм
-            byte[] EncryptedB = _LHXORwCD.MLinearChipher(Message, Password, true, MaxDifficallity);
-            Console.WriteLine("EnCrypted: " + _LHXORwCD.BytesToHex(EncryptedB, " "));
-            byte[] DecryptedB = _LHXORwCD.MLinearChipher(EncryptedB, Password, false, MaxDifficallity);
-            Console.WriteLine("DeCrypted: " + Encoding.UTF8.GetString(DecryptedB));
-            
-            // BMLinearChipher алгоритм
-            byte[] EncryptedE = _LHXORwCD.BMLinearChipher(Message, Password, true, BlockSize, MaxDifficallity);
-            Console.WriteLine("EnCrypted: " + _LHXORwCD.BytesToHex(EncryptedE, " "));
-            byte[] DecryptedE = _LHXORwCD.BMLinearChipher(EncryptedE, Password, false, BlockSize, MaxDifficallity);
-            Console.WriteLine("DeCrypted: " + Encoding.UTF8.GetString(DecryptedE));
-            
-            // BMCBCChipher алгоритм
-            byte[] Encrypted = _LHXORwCD.BMCBCChipher(Message, Password, true, BlockSize, MaxDifficallity);
-            Console.WriteLine("EnCrypted: " + _LHXORwCD.BytesToHex(Encrypted, " "));
-            byte[] Decrypted = _LHXORwCD.BMCBCChipher(Encrypted, Password, false, BlockSize, MaxDifficallity);
-            Console.WriteLine("DeCrypted: " + Encoding.UTF8.GetString(Decrypted));
+    byte[] Message = Encoding.UTF8.GetBytes("кодируемое сообщение");
+    byte[] Password = Encoding.UTF8.GetBytes("парольная фраза");
+    int BlockSize = 16;
+    int MaxDifficallity = 256;
+    Console.WriteLine("Original text:");
+    Console.WriteLine(Encoding.UTF8.GetString(Message));
+
+    LHXORwCD _LHXORwCD = new LHXORwCD();
+    // LinearChipher алгоритм
+    byte[] EncryptedС = _LHXORwCD.LinearChipher(Message, Password, true, MaxDifficallity);
+    Console.WriteLine("EnCrypted: " + _LHXORwCD.BytesToHex(EncryptedС, " "));
+    byte[] DecryptedС = _LHXORwCD.LinearChipher(EncryptedС, Password, false, MaxDifficallity);
+    Console.WriteLine("DeCrypted: " + Encoding.UTF8.GetString(DecryptedС));
+
+    // BLinearChipher алгоритм
+    byte[] EncryptedD = _LHXORwCD.BLinearChipher(Message, Password, true, BlockSize, MaxDifficallity);
+    Console.WriteLine("EnCrypted: " + _LHXORwCD.BytesToHex(EncryptedD, " "));
+    byte[] DecryptedD = _LHXORwCD.BLinearChipher(EncryptedD, Password, false, BlockSize, MaxDifficallity);
+    Console.WriteLine("DeCrypted: " + Encoding.UTF8.GetString(DecryptedD));
+
+    // MLinearChipher алгоритм
+    byte[] EncryptedB = _LHXORwCD.MLinearChipher(Message, Password, true, MaxDifficallity);
+    Console.WriteLine("EnCrypted: " + _LHXORwCD.BytesToHex(EncryptedB, " "));
+    byte[] DecryptedB = _LHXORwCD.MLinearChipher(EncryptedB, Password, false, MaxDifficallity);
+    Console.WriteLine("DeCrypted: " + Encoding.UTF8.GetString(DecryptedB));
+
+    // BMLinearChipher алгоритм
+    byte[] EncryptedE = _LHXORwCD.BMLinearChipher(Message, Password, true, BlockSize, MaxDifficallity);
+    Console.WriteLine("EnCrypted: " + _LHXORwCD.BytesToHex(EncryptedE, " "));
+    byte[] DecryptedE = _LHXORwCD.BMLinearChipher(EncryptedE, Password, false, BlockSize, MaxDifficallity);
+    Console.WriteLine("DeCrypted: " + Encoding.UTF8.GetString(DecryptedE));
+
+    // BMCBCChipher алгоритм
+    byte[] Encrypted = _LHXORwCD.BMCBCChipher(Message, Password, true, BlockSize, MaxDifficallity);
+    Console.WriteLine("EnCrypted: " + _LHXORwCD.BytesToHex(Encrypted, " "));
+    byte[] Decrypted = _LHXORwCD.BMCBCChipher(Encrypted, Password, false, BlockSize, MaxDifficallity);
+    Console.WriteLine("DeCrypted: " + Encoding.UTF8.GetString(Decrypted));

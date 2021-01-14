@@ -99,7 +99,7 @@
         
 
  ## Примеры реализации кода на базе разработанного класса с методами шифрования ##
-
+```csharp
     byte[] Message = Encoding.UTF8.GetBytes("кодируемое сообщение");
     byte[] Password = Encoding.UTF8.GetBytes("парольная фраза");
     int BlockSize = 16;
@@ -137,3 +137,4 @@
     Console.WriteLine("EnCrypted: " + _LHXORwCD.BytesToHex(Encrypted, " "));
     byte[] Decrypted = _LHXORwCD.BMCBCChipher(Encrypted, Password, false, BlockSize, MaxDifficallity);
     Console.WriteLine("DeCrypted: " + Encoding.UTF8.GetString(Decrypted));
+    ```

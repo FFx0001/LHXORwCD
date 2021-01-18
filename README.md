@@ -22,7 +22,7 @@
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ## Основные режимы работы алгоритма шифрования LHXORwCD: ##
 
-1 -  Линейное кодирование LinearChipher (Базовая реализация алгоритма без каких либо режимов, позволяет добиться высокой энтропии, но шифрование в этом режиме является единообразным с повторяемой комбинацией байт на выходе.).
+1 -  Линейное кодирование LinearChipher (LHXORwCD) (Базовая реализация алгоритма без каких либо режимов, позволяет добиться высокой энтропии, но шифрование в этом режиме является единообразным с повторяемой комбинацией байт на выходе.).
 
     - из минусов:
         * При кодировании идентичных данных одним и тем же ключем выходной шифротекст не изменяется,
@@ -37,7 +37,7 @@
         * При изменении парольной фразы даже на 1 бит весь результат криптографической функции будет
         другим (шифротекст изменится полностью при неизменном исходном сообщении).
         
-2 - Блочное линейное кодирование BLinearChipher (В основе алгоритма лежит линейное кодирование, но с добавлением блоков перемешиваемых в процессе, что позволяет частично скрыт особенности языка. )
+2 - Блочное линейное кодирование SBLinearChipher (LHXORwCD + Swap Block Linear Chiper) (В основе алгоритма лежит линейное кодирование, но с добавлением блоков перемешиваемых в процессе, что позволяет частично скрыт особенности языка. )
     Исходное сообщение кодируется линейным алгоритмом после чего разделятся на блоки регулируемой длинны (для небольших сообщений рекомендуется ставить более мелкие размеры блока), после чего FFxTG_RNG (инициализируемый сидом от парольной фразы) производит перестановки блоков выходного шифротекста.
 
     - из минусов:
@@ -51,7 +51,7 @@
         *  все плюсы перечисленные в пункте 1 - (Линейное кодирование)
         *  частичное сокрытие особенностей языка за счет перестановки выходных бит.
         
- 3 - Линейное полиморфное кодирование MLinearChipher (в основе лежит базовое линейное кодирование)
+ 3 - Линейное полиморфное кодирование MLinearChipher (LHXORwCD + Morph Linear Chiper) (в основе лежит базовое линейное кодирование)
     Исходное сообщение морфируется по специальной подстановочной таблице которая создается на основе seed и FFxTG_RNG генератора 
     (таблица имеет 10 колонок по 25 элементов каждая из которых заполняется случайными неповторяющимися в других колонках байтами от 0-256) после чего байты исходного поэлементно ищутся как номера колонок в таблице замен и рандомно выбирается байт из столбца соответствующему 1, 2, и 3 му элементу в байте шифротекста замещая в итоге 1 настоящий байт шифротекста на 3 рандомных сгенерированных на основе сида от пароля. В результате данной операции любое количество повторных шифрований одних и тех же данных с одним и тем же ключем дают полное изменение выходных байт шифротекста до неразличимого шума.
     
@@ -66,7 +66,7 @@
         * повторное шифрование приводит полному изменению шифротекста.
         * график энтропии выглядит как нелинейный шум.
  
- 4 - Линейное Блочно полиморфное кодирование BMLinearChipher (в основе лежит Линейное полиморфное кодирование)
+ 4 - Линейное Блочно полиморфное кодирование SBMLinearChipher (LHXORwCD + Swap Block Morph Linear Chiper) (в основе лежит Линейное полиморфное кодирование)
     В добавок к морфированию сообщения добавляется блочная перестанока выходного шифротекста 
     (размеры блоков влияют на качество перемешивания чем меньше размер блока тем больше блоков в итоге получится - для коротких сообщений рекомендуется устанавливать размеры блока от 2-8 ) 
     
@@ -82,9 +82,24 @@
         * повторное шифрование приводит полному изменению шифротекста.
         * график энтропии выглядит как нелинейный шум.
         
- 5 - Линейное Блочное CBC полиморфное кодирование со связыванием  BMCBCChipher (в основе лежит Линейное Блочно полиморфное кодирование)
+ 5 -  Блочное CBC полиморфное кодирование со связыванием  SBMCBCChipher (LHXORwCD + Swap Block Morph CBC Chiper) (в основе лежит Линейное Блочно полиморфное кодирование)
     Изначально генерируется seed из парольной фразы подаваемый на FFxTG_RNG
-    (экземпляр которого создается 1 раз и используется на всех последующих этапах (нарушение при декодировании итерации рандома хотя бы на 1 сводит всю расшифровку на нет), этот факт значительно усложняет попытки слепой атаки, на основе предыдущего алгоритма строится морф таблица, открытый текст морфится после чего разлагается вместе с ключем Long Hash на блоки указанного размера, производится их перемешивание входным Seed парольной фразы) после чего генерируется IV в размер блока (в реализации данного алгоритма размер блоков рекомендуется ставить в диапазоне от 8 - 16  (слишком короткие блоки снижают крипто стойкость в режиме связывания блоков получается низкая энтропия)),  производится XOR операция с морфленным сообщением, а после с Lhash соответствующим блоком ключа, результат шифрования записывается в массив и устанавливается как IV для следующей итерации по всем блокам ( CBC режим ). В результате на выходе получается высокоэнтропийная шумовая сглаженная последовательность, на конце имеется характерный для блочного наложения скат не превышающий 10% от общего колебания графика (данный факт не позволяет поанализироват шифротекст как линейным так и дифференциальными методами - фактический шум в гистограмме).
+    (экземпляр которого создается 1 раз и используется на всех последующих этапах (нарушение при декодировании итерации рандома хотя бы на 1 сводит всю расшифровку на нет), этот факт значительно усложняет попытки слепой атаки, на основе предыдущего алгоритма строится морф таблица, открытый текст морфится после чего разлагается вместе с ключем Long Hash на блоки указанного размера) после чего генерируется IV в размер блока (в реализации данного алгоритма размер блоков рекомендуется ставить в диапазоне от 8 - 16  (слишком короткие блоки снижают крипто стойкость в режиме связывания блоков получается низкая энтропия)),  производится XOR операция с морфленным сообщением, а после с Lhash соответствующим блоком ключа, результат шифрования записывается в массив и устанавливается как IV для следующей итерации по всем блокам ( CBC режим ) результурующие блоки шифротекста перемешиваются между собой с указанным размером блоков. В результате на выходе получается высокоэнтропийная шумовая сглаженная последовательность, на конце имеется характерный для блочного наложения скат не превышающий 10% от общего колебания графика (данный факт не позволяет поанализироват шифротекст как линейным так и дифференциальными методами - фактический шум в гистограмме).
+    
+    - из минусов:
+        * требует больше затрат ресурсов компьютера.
+        * объём шифротекста увеличивается 3 к 1.
+    
+    - из плюсов:
+        * все плюсы перечисленные в пункте 4 - (Линейное Блочно полиморфное кодирование)
+        * За счет блочного связывания становится невозможен линейный и дифференциальный анализ.
+        * График энтропии выглядит как более сглаженный шум с уменьшением энтропии в конце 
+        (за счет этого сводятся на не любые попытки анализа - выходные данные являются кашей из на ложившихся 
+        друг на друга предшествующих блоков)
+  
+   6 - Блочное CBC связываемое полиморфное кодирование с двоным перемешиванием блоков DSBMCBCChipher (LHXORwCD + Double Swap Block Morph CBC Chiper) (в основе лежит Линейное Блочно полиморфное кодирование)
+    Изначально генерируется seed из парольной фразы подаваемый на FFxTG_RNG
+    (экземпляр которого создается 2 раза и первый из которх используется на всех последующих этапах кроме повторного перемешивания (нарушение при декодировании итерации рандома хотя бы на 1 сводит всю расшифровку на нет), этот факт значительно усложняет попытки слепой атаки, на основе предыдущего алгоритма строится морф таблица, открытый текст морфится после чего разлагается вместе с ключем Long Hash на блоки указанного размера, производится их перемешивание входным Seed парольной фразы с длинной блока 1 что означает полное побайтовое перемешивание морфленного сообщения seed ом парольной фразы) после чего генерируется IV в размер блока (в реализации данного алгоритма размер блоков рекомендуется ставить в диапазоне от 8 - 16  (слишком короткие блоки снижают крипто стойкость в режиме связывания блоков получается низкая энтропия)),  производится XOR операция с морфленным сообщением, а после с Lhash соответствующим блоком ключа, результат шифрования записывается в массив и устанавливается как IV для следующей итерации по всем блокам ( CBC режим ). Результирующие блоки повторно перемешиваются уже изначально созданным экземпляром FFXTG_RNG по указанному размеру блоков. В результате на выходе получается высокоэнтропийная шумовая сглаженная последовательность, на конце имеется характерный для блочного наложения скат не превышающий 10% от общего колебания графика (данный факт не позволяет поанализироват шифротекст как линейным так и дифференциальными методами - фактический шум в гистограмме).
     
     - из минусов:
         * требует больше затрат ресурсов компьютера.
@@ -100,41 +115,61 @@
 
  ## Примеры реализации кода на базе разработанного класса с методами шифрования ##
 ```csharp
-    byte[] Message = Encoding.UTF8.GetBytes("кодируемое сообщение");
-    byte[] Password = Encoding.UTF8.GetBytes("парольная фраза");
-    int BlockSize = 16;
-    int MaxDifficallity = 256;
-    Console.WriteLine("Original text:");
-    Console.WriteLine(Encoding.UTF8.GetString(Message));
+    string value = "Разнообразный и богатый опыт консультация с широким активом способствует подготовки и реализации систем массового участия. Разнообразный и богатый опыт реализация намеченных плановых заданий требуют определения и уточнения систем массового участия. С другой стороны новая модель организационной деятельности позволяет оценить значение соответствующий условий активизации. С другой стороны рамки и место обучения кадров позволяет выполнять важные задания по разработке дальнейших направлений развития.";
+    
+            byte[] Message = Encoding.UTF8.GetBytes(value);
+            byte[] Password = Encoding.UTF8.GetBytes("а23в34ау69");
+            int BlockSize = 16; // размер блока 64 миксимум (если используется режим с блоками)
+            int MaxDifficallity = 512;// сложность алгоритма (указать 1 если требуется минимальная)
+            
+            Console.WriteLine("Original text:");
+            Console.WriteLine(Encoding.UTF8.GetString(Message));
 
-    LHXORwCD _LHXORwCD = new LHXORwCD();
-    // LinearChipher алгоритм
-    byte[] EncryptedС = _LHXORwCD.LinearChipher(Message, Password, true, MaxDifficallity);
-    Console.WriteLine("EnCrypted: " + _LHXORwCD.BytesToHex(EncryptedС, " "));
-    byte[] DecryptedС = _LHXORwCD.LinearChipher(EncryptedС, Password, false, MaxDifficallity);
-    Console.WriteLine("DeCrypted: " + Encoding.UTF8.GetString(DecryptedС));
+            LHXORwCD _LHXORwCD = new LHXORwCD();
 
-    // BLinearChipher алгоритм
-    byte[] EncryptedD = _LHXORwCD.BLinearChipher(Message, Password, true, BlockSize, MaxDifficallity);
-    Console.WriteLine("EnCrypted: " + _LHXORwCD.BytesToHex(EncryptedD, " "));
-    byte[] DecryptedD = _LHXORwCD.BLinearChipher(EncryptedD, Password, false, BlockSize, MaxDifficallity);
-    Console.WriteLine("DeCrypted: " + Encoding.UTF8.GetString(DecryptedD));
+            // LinearChipher (LHXORwCD) алгоритм (не рекомендуется использовать в боевых целях в чистом виде, для каждого нового сообщения требуется новый пароль)
+            byte[] EncryptedA = _LHXORwCD.LinearChipher(Message, Password, true, MaxDifficallity);
+            Console.WriteLine("\nLinearChipher EnCrypted: " + _LHXORwCD.BytesToHex(EncryptedA, " "));
 
-    // MLinearChipher алгоритм
-    byte[] EncryptedB = _LHXORwCD.MLinearChipher(Message, Password, true, MaxDifficallity);
-    Console.WriteLine("EnCrypted: " + _LHXORwCD.BytesToHex(EncryptedB, " "));
-    byte[] DecryptedB = _LHXORwCD.MLinearChipher(EncryptedB, Password, false, MaxDifficallity);
-    Console.WriteLine("DeCrypted: " + Encoding.UTF8.GetString(DecryptedB));
+            byte[] DecryptedA = _LHXORwCD.LinearChipher(EncryptedA, Password, false, MaxDifficallity);
+            Console.WriteLine("\nLinearChipher DeCrypted: " + Encoding.UTF8.GetString(DecryptedA));
 
-    // BMLinearChipher алгоритм
-    byte[] EncryptedE = _LHXORwCD.BMLinearChipher(Message, Password, true, BlockSize, MaxDifficallity);
-    Console.WriteLine("EnCrypted: " + _LHXORwCD.BytesToHex(EncryptedE, " "));
-    byte[] DecryptedE = _LHXORwCD.BMLinearChipher(EncryptedE, Password, false, BlockSize, MaxDifficallity);
-    Console.WriteLine("DeCrypted: " + Encoding.UTF8.GetString(DecryptedE));
+            // SBLinearChipher (LHXORwCD + Swap Block Linear Chiper) алгоритм (не рекомендуется использовать в боевых целях в чистом виде, для каждого нового сообщения требуется новый пароль)
+            // рекомендуется наименьший размер блока 1-4
+            byte[] EncryptedB = _LHXORwCD.SBLinearChipher(Message, Password, true, MaxDifficallity);
+            Console.WriteLine("\nSBLinearChipher EnCrypted: " + _LHXORwCD.BytesToHex(EncryptedB, " "));
 
-    // BMCBCChipher алгоритм
-    byte[] Encrypted = _LHXORwCD.BMCBCChipher(Message, Password, true, BlockSize, MaxDifficallity);
-    Console.WriteLine("EnCrypted: " + _LHXORwCD.BytesToHex(Encrypted, " "));
-    byte[] Decrypted = _LHXORwCD.BMCBCChipher(Encrypted, Password, false, BlockSize, MaxDifficallity);
-    Console.WriteLine("DeCrypted: " + Encoding.UTF8.GetString(Decrypted));
+            byte[] DecryptedB = _LHXORwCD.SBLinearChipher(EncryptedB, Password, false, MaxDifficallity);
+            Console.WriteLine("\nSBLinearChipher DeCrypted: " + Encoding.UTF8.GetString(DecryptedB));
+
+            // MLinearChipher (LHXORwCD + Morph Linear Chiper) алгоритм  (Рекомендуется использовать новый пароль на каждые 10 сообщений, а еще лучше новый пароль для каждого нового сообщения)
+            byte[] EncryptedС = _LHXORwCD.MLinearChipher(Message, Password, true, MaxDifficallity);
+            Console.WriteLine("\nMLinearChipher EnCrypted: " + _LHXORwCD.BytesToHex(EncryptedС, " "));
+
+            byte[] DecryptedС = _LHXORwCD.MLinearChipher(EncryptedС, Password, false, MaxDifficallity);
+            Console.WriteLine("\nMLinearChipher DeCrypted: " + Encoding.UTF8.GetString(DecryptedС));
+
+            // SBMLinearChipher (LHXORwCD + Swap Block Morph Linear Chiper)  алгоритм (Рекомендуется использовать новый пароль на каждые 10 сообщений, а еще лучше новый пароль для каждого нового сообщения)
+            // рекомендуется наименьший размер блока 1-4
+            byte[] EncryptedD = _LHXORwCD.SBMLinearChipher(Message, Password, true, MaxDifficallity);
+            Console.WriteLine("\nSBMLinearChipher EnCrypted: " + _LHXORwCD.BytesToHex(EncryptedD, " "));
+
+            byte[] DecryptedD = _LHXORwCD.SBMLinearChipher(EncryptedD, Password, false, MaxDifficallity);
+            Console.WriteLine("\nSBMLinearChipher DeCrypted: " + Encoding.UTF8.GetString(DecryptedD));
+
+            // SBMCBCChipher (LHXORwCD + Swap Block Morph CBC Chiper)  алгоритм (Рекомендуется использовать новый пароль на каждые 10 сообщений, а еще лучше новый пароль для каждого нового сообщения)
+            // рекомендуется размер блока 4 - 8 - 16
+            byte[] EncryptedE = _LHXORwCD.SBMCBCChipher(Message, Password, true, BlockSize, MaxDifficallity);
+            Console.WriteLine("\nSBMCBCChipher EnCrypted: " + _LHXORwCD.BytesToHex(EncryptedE, " "));
+
+            byte[] DecryptedE = _LHXORwCD.SBMCBCChipher(EncryptedE, Password, false, BlockSize, MaxDifficallity);
+            Console.WriteLine("\nSBMCBCChipher DeCrypted: " + Encoding.UTF8.GetString(DecryptedE));
+
+            // DSBMCBCChipher (LHXORwCD + Double Swap Block Morph CBC Chiper) алгоритм (Рекомендуется использовать новый пароль на каждые 10 сообщений, а еще лучше новый пароль для каждого нового сообщения)
+            // рекомендуется размер блока 8 - 16
+            byte[] EncryptedF = _LHXORwCD.DSBMCBCChipher(Message, Password, true, BlockSize, MaxDifficallity);
+            Console.WriteLine("\nDSBMCBCChipher EnCrypted: " + _LHXORwCD.BytesToHex(EncryptedF, " "));
+
+            byte[] DecryptedF = _LHXORwCD.DSBMCBCChipher(EncryptedF, Password, false, BlockSize, MaxDifficallity);
+            Console.WriteLine("\nDSBMCBCChipher DeCrypted: " + Encoding.UTF8.GetString(DecryptedF));
     ```

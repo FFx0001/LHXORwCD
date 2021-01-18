@@ -150,7 +150,7 @@ namespace LHXORwCDChiper
         }
     }
 
-    public class FFxTG_RNG
+    class FFxTG_RNG
     {
         private byte[] seed;
         public FFxTG_RNG(UInt32 seed)
@@ -358,7 +358,7 @@ namespace LHXORwCDChiper
         // перемешивание блоков между собой
         private List<byte[]> RandomSwapBlocks(List<byte[]> Blocks, FFxTG_RNG _FFxTG_RNG)
         {
-            Console.WriteLine("Count Blocks:" + Blocks.Count().ToString());
+            Console.WriteLine("\nSWAP Count Blocks:" + Blocks.Count().ToString());
             List<byte[]> _Blocks = Blocks;
             int n = Blocks.Count();
             while (n > 1)
@@ -374,6 +374,7 @@ namespace LHXORwCDChiper
         // возрат перемешанных блоков в исходное состояние
         private List<byte[]> DeRandomSwapBlocks(List<byte[]> Blocks, FFxTG_RNG _FFxTG_RNG)
         {
+            Console.WriteLine("\nDeSWAP Count Blocks:" + Blocks.Count().ToString());
             List<byte[]> _Blocks = Blocks;
             List<RIntPair> RPair = new List<RIntPair>();
             int n = Blocks.Count();
@@ -395,38 +396,30 @@ namespace LHXORwCDChiper
             return _Blocks;
         }
 
-        // шифрование дешифрование Блочный морфирующий Линейный алгоритм перетасовывает результат шифрования блоками без связки
-        public byte[] BMLinearChipher(byte[] Message, byte[] Password, bool IsEncryptMode, int blockSize = 4, int MaxCountRaund = 512)
+        // шифрование дешифрование Линейный алгоритм только ксор на хеш
+        public byte[] LinearChipher(byte[] Message, byte[] Password, bool IsEncryptMode, int MaxCountRaund = 512)
         {
             UInt32 seed = GetSeedFromBytesArray(Password);
             FFxTG_RNG _FFxTG_RNG = new FFxTG_RNG(seed);
-            // генерация таблицы замен
-            List<byte[]> MTable = GetMorphTable(_FFxTG_RNG); // ******
             if (IsEncryptMode)
             {
                 // генерируем хеш длинной с морфленное сообщение
                 byte[] LongHash = CreateLongHashSHAWithPassword(Password, Message.Count(), _FFxTG_RNG, MaxCountRaund);  // ******
-                // нарезаем на блоки и перетасовываем сидом
-                List<byte[]> EncodedBlocks = RandomSwapBlocks(SplitToBlocks(Message, blockSize), _FFxTG_RNG); // ******
-                 byte[] Encoded =  VernamChifer(UnionBlocksToArray(EncodedBlocks), LongHash);
-                // делаем морф исходного сообщения
-                return FlipBytesByMorphTable(Encoded, MTable, GetSeedFromBytesArray(Encoding.UTF8.GetBytes(System.Guid.NewGuid().ToString()))); // внутренний рандом не связанный с общим счетчиком
+                return VernamChifer(Message, LongHash);
             }
             else
             {
-                byte[] DeMorphed = RestoreBytesFromMorphed(Message, MTable);
                 // генерируем хеш длинной с морфленное сообщение
-                byte[] LongHash = CreateLongHashSHAWithPassword(Password, DeMorphed.Count(), _FFxTG_RNG, MaxCountRaund);  // ******
-                byte[] Decoded = VernamChifer(DeMorphed, LongHash);
-                // нарезаем на блоки и перетасовываем сидом
-                List<byte[]> DecodedMessageBlocks = DeRandomSwapBlocks(SplitToBlocks(Decoded, blockSize), _FFxTG_RNG); // ******
-                return UnionBlocksToArray(DecodedMessageBlocks);
+                byte[] LongHash = CreateLongHashSHAWithPassword(Password, Message.Count(), _FFxTG_RNG, MaxCountRaund);  // ******
+                return VernamChifer(Message, LongHash);
             }
         }
 
         // шифрование дешифрование Блочный Линейный алгоритм перетасовывает результат шифрования блоками без связки
-        public byte[] BLinearChipher(byte[] Message, byte[] Password, bool IsEncryptMode, int blockSize = 4, int MaxCountRaund = 512)
+        // рекомендуемый размер блока 1
+        public byte[] SBLinearChipher(byte[] Message, byte[] Password, bool IsEncryptMode, int MaxCountRaund = 512)
         {
+            int blockSize = 1;
             UInt32 seed = GetSeedFromBytesArray(Password);
             FFxTG_RNG _FFxTG_RNG = new FFxTG_RNG(seed);
             if (IsEncryptMode)
@@ -445,25 +438,6 @@ namespace LHXORwCDChiper
                 // нарезаем на блоки и перетасовываем сидом
                 List<byte[]> DecodedMessageBlocks = DeRandomSwapBlocks(SplitToBlocks(Decoded, blockSize), _FFxTG_RNG); // ******
                 return UnionBlocksToArray(DecodedMessageBlocks);
-            }
-        }
-
-        // шифрование дешифрование Линейный алгоритм только ксор на хеш
-        public byte[] LinearChipher(byte[] Message, byte[] Password, bool IsEncryptMode, int MaxCountRaund = 512)
-        {
-            UInt32 seed = GetSeedFromBytesArray(Password);
-            FFxTG_RNG _FFxTG_RNG = new FFxTG_RNG(seed);
-            if (IsEncryptMode)
-            {
-                // генерируем хеш длинной с морфленное сообщение
-                byte[] LongHash = CreateLongHashSHAWithPassword(Password, Message.Count(), _FFxTG_RNG, MaxCountRaund);  // ******
-                return VernamChifer(Message, LongHash);
-            }
-            else
-            {
-                // генерируем хеш длинной с морфленное сообщение
-                byte[] LongHash = CreateLongHashSHAWithPassword(Password, Message.Count(), _FFxTG_RNG, MaxCountRaund);  // ******
-                return VernamChifer(Message, LongHash);
             }
         }
 
@@ -495,10 +469,41 @@ namespace LHXORwCDChiper
             }
         }
 
-        // шифрование дешифрование CBC режим
+        // шифрование дешифрование Блочный морфирующий Линейный алгоритм перетасовывает результат шифрования блоками без связки
+        // рекомендуемый размер блока 1
+        public byte[] SBMLinearChipher(byte[] Message, byte[] Password, bool IsEncryptMode, int MaxCountRaund = 512)
+        {
+            int blockSize = 1;
+            UInt32 seed = GetSeedFromBytesArray(Password);
+            FFxTG_RNG _FFxTG_RNG = new FFxTG_RNG(seed);
+            // генерация таблицы замен
+            List<byte[]> MTable = GetMorphTable(_FFxTG_RNG); // ******
+            if (IsEncryptMode)
+            {
+                // генерируем хеш длинной с морфленное сообщение
+                byte[] LongHash = CreateLongHashSHAWithPassword(Password, Message.Count(), _FFxTG_RNG, MaxCountRaund);  // ******
+                // нарезаем на блоки и перетасовываем сидом
+                List<byte[]> EncodedBlocks = RandomSwapBlocks(SplitToBlocks(Message, blockSize), _FFxTG_RNG); // ******
+                byte[] Encoded = VernamChifer(UnionBlocksToArray(EncodedBlocks), LongHash);
+                // делаем морф исходного сообщения
+                return FlipBytesByMorphTable(Encoded, MTable, GetSeedFromBytesArray(Encoding.UTF8.GetBytes(System.Guid.NewGuid().ToString()))); // внутренний рандом не связанный с общим счетчиком
+            }
+            else
+            {
+                byte[] DeMorphed = RestoreBytesFromMorphed(Message, MTable);
+                // генерируем хеш длинной с морфленное сообщение
+                byte[] LongHash = CreateLongHashSHAWithPassword(Password, DeMorphed.Count(), _FFxTG_RNG, MaxCountRaund);  // ******
+                byte[] Decoded = VernamChifer(DeMorphed, LongHash);
+                // нарезаем на блоки и перетасовываем сидом
+                List<byte[]> DecodedMessageBlocks = DeRandomSwapBlocks(SplitToBlocks(Decoded, blockSize), _FFxTG_RNG); // ******
+                return UnionBlocksToArray(DecodedMessageBlocks);
+            }
+        }
+
+        // шифрование дешифрование CBC режим (1 перемешивание результата шфрования)
         // с регулируемой вычислительной сложностью 1 еденица сложности соотносимо с 1 проходом операции sha512
         // рекомендуемые размеры блоков (чем короче средний размер открытых текстов тем более мелкие блоки рекомендуются, малые размеры блоков улчше скрывают особенности открытого текста) 4, 6, 8, 16, 32, 64
-        public byte[] CBCChipher(byte[] Message, byte[] Password, bool IsEncryptMode, int blockSize=16, int MaxCountRaund = 512)
+        public byte[] SBMCBCChipher(byte[] Message, byte[] Password, bool IsEncryptMode, int blockSize=16, int MaxCountRaund = 512)
         {
             List<byte> _IV = new List<byte>();// не для прямого использования
             UInt32 seed = GetSeedFromBytesArray(Password);
@@ -515,8 +520,7 @@ namespace LHXORwCDChiper
                 byte[] LongHash = CreateLongHashSHAWithPassword(Password, (Message.Count() * 3), _FFxTG_RNG, MaxCountRaund);  // ******
                 // делаем морф исходного сообщения
                 byte[] MorphedMessage = FlipBytesByMorphTable(Message, MTable, GetSeedFromBytesArray(Encoding.UTF8.GetBytes(System.Guid.NewGuid().ToString()))); // внутренний рандом не связанный с общим счетчиком
-                // нарезаем на блоки и перетасовываем сидом
-                List<byte[]> MessageBlocks = RandomSwapBlocks(SplitToBlocks(MorphedMessage, blockSize), _FFxTG_RNG); // ******
+                List<byte[]> MessageBlocks = SplitToBlocks(MorphedMessage, blockSize);
                 List<byte[]> LongHashBlocks = SplitToBlocks(LongHash, blockSize);
                 List<byte[]> EncryptedBlocks = new List<byte[]>();
                 // проход по связке блоков
@@ -529,7 +533,9 @@ namespace LHXORwCDChiper
                     IV = EncodedBlockB;
                     EncryptedBlocks.Add(EncodedBlockB.ToArray());
                 }
-                return UnionBlocksToArray(EncryptedBlocks);
+                // нарезаем на блоки и перетасовываем сидом
+                List<byte[]> EncryptedBlocksSwapped = RandomSwapBlocks(EncryptedBlocks, _FFxTG_RNG); // ******
+                return UnionBlocksToArray(EncryptedBlocksSwapped);
             }
             else
             {
@@ -537,7 +543,9 @@ namespace LHXORwCDChiper
                 // генерируем хеш длинной с морфленное сообщение
                 byte[] LongHash = CreateLongHashSHAWithPassword(Password, EncryptedMessage.Count(), _FFxTG_RNG, MaxCountRaund);  // ******
                 List<byte[]> LongHashBlocks = SplitToBlocks(LongHash, blockSize);
-                List<byte[]> EncryptedMessageBlocks = SplitToBlocks(EncryptedMessage, blockSize);
+                List<byte[]> EncryptedMessageSwappedBlocks = SplitToBlocks(EncryptedMessage, blockSize);
+                // нарезаем на блоки и перетасовываем сидом
+                List<byte[]> EncryptedMessageBlocks = DeRandomSwapBlocks(EncryptedMessageSwappedBlocks, _FFxTG_RNG); // ******
                 List<byte[]> DecryptedBlocks = new List<byte[]>();
                 // проход по связке блоков
                 for (int i = 0; i < EncryptedMessageBlocks.Count(); i++)
@@ -549,10 +557,76 @@ namespace LHXORwCDChiper
                     IV = EncryptedMessageBlock;
                     DecryptedBlocks.Add(DecodedBlockB.ToArray());
                 }
-                // нарезаем на блоки и перетасовываем сидом
-                List<byte[]> MorphedMessageBlocks = DeRandomSwapBlocks(DecryptedBlocks, _FFxTG_RNG); // ******
+               
                 // делаем ДЕ морф исходного сообщения
-                byte[] DeMorphedMessage = RestoreBytesFromMorphed(UnionBlocksToArray(MorphedMessageBlocks), MTable);
+                byte[] DeMorphedMessage = RestoreBytesFromMorphed(UnionBlocksToArray(DecryptedBlocks), MTable);
+                return DeMorphedMessage;
+            }
+        }
+
+        // шифрование дешифрование CBC режим c двойным пермешиванием блоков (перемешиваеются морф блоки и результат шифрования независимо)
+        // с регулируемой вычислительной сложностью 1 еденица сложности соотносимо с 1 проходом операции sha512
+        // рекомендуемые размеры блоков (чем короче средний размер открытых текстов тем более мелкие блоки рекомендуются, малые размеры блоков улчше скрывают особенности открытого текста) 4, 6, 8, 16, 32, 64
+        public byte[] DSBMCBCChipher(byte[] Message, byte[] Password, bool IsEncryptMode, int blockSize = 16, int MaxCountRaund = 512)
+        {
+            List<byte> _IV = new List<byte>();// не для прямого использования
+            UInt32 seed = GetSeedFromBytesArray(Password);
+            FFxTG_RNG _FFxTG_RNG = new FFxTG_RNG(seed);
+            // генерация таблицы замен
+            List<byte[]> MTable = GetMorphTable(_FFxTG_RNG); // ******
+            // генерируем IV по средству RNG
+            for (int i = 0; i < blockSize; i++) { _IV.Add((byte)_FFxTG_RNG.Next(0, 256)); } // ******
+            byte[] IV = _IV.ToArray();
+
+            if (IsEncryptMode)
+            {
+                // генерируем хеш длинной с морфленное сообщение
+                byte[] LongHash = CreateLongHashSHAWithPassword(Password, (Message.Count() * 3), _FFxTG_RNG, MaxCountRaund);  // ******
+                // делаем морф исходного сообщения
+                byte[] MorphedMessage = FlipBytesByMorphTable(Message, MTable, GetSeedFromBytesArray(Encoding.UTF8.GetBytes(System.Guid.NewGuid().ToString()))); // внутренний рандом не связанный с общим счетчиком
+                List<byte[]> MessageBlocks = SplitToBlocks(MorphedMessage, blockSize);
+                List<byte[]> LongHashBlocks = SplitToBlocks(LongHash, blockSize);
+                // разделяем на блоки по 1 байту и тосуем морфленное сообщение для сокрытия особенностей языка и заново нарезаем на n блоков
+                List<byte[]> MorphedSwapped = SplitToBlocks(UnionBlocksToArray(RandomSwapBlocks(SplitToBlocks(UnionBlocksToArray(MessageBlocks), 1), new FFxTG_RNG(seed))),blockSize); // ******
+                List<byte[]> EncryptedBlocks = new List<byte[]>();
+                // проход по связке блоков
+                for (int i = 0; i < MorphedSwapped.Count(); i++)
+                {
+                    byte[] MessageBlock = MorphedSwapped[i];
+                    byte[] LongHashBlock = LongHashBlocks[i];
+                    byte[] EncodedBlockA = VernamChifer(MessageBlock, IV);
+                    byte[] EncodedBlockB = VernamChifer(EncodedBlockA, LongHashBlock);
+                    IV = EncodedBlockB;
+                    EncryptedBlocks.Add(EncodedBlockB.ToArray());
+                }
+                // Перетасовываем результат шифрования
+                List<byte[]> EncryptedBlocksSwapped = RandomSwapBlocks(EncryptedBlocks, _FFxTG_RNG); // ******
+                return UnionBlocksToArray(EncryptedBlocksSwapped);
+            }
+            else
+            {
+                byte[] EncryptedMessage = Message;
+                // генерируем хеш длинной с морфленное сообщение
+                byte[] LongHash = CreateLongHashSHAWithPassword(Password, EncryptedMessage.Count(), _FFxTG_RNG, MaxCountRaund);  // ******
+                List<byte[]> LongHashBlocks = SplitToBlocks(LongHash, blockSize);
+                List<byte[]> EncryptedMessageSwappedBlocks = SplitToBlocks(EncryptedMessage, blockSize);
+                // перетасовываем обратно блоки шифрованного сообщения
+                List<byte[]> EncryptedMessageBlocks = DeRandomSwapBlocks(EncryptedMessageSwappedBlocks, _FFxTG_RNG); // ******
+                List<byte[]> DecryptedBlocks = new List<byte[]>();
+                // проход по связке блоков
+                for (int i = 0; i < EncryptedMessageBlocks.Count(); i++)
+                {
+                    byte[] EncryptedMessageBlock = EncryptedMessageBlocks[i];
+                    byte[] LongHashBlock = LongHashBlocks[i];
+                    byte[] EncodedBlockA = VernamChifer(EncryptedMessageBlock, LongHashBlock);
+                    byte[] DecodedBlockB = VernamChifer(EncodedBlockA, IV);
+                    IV = EncryptedMessageBlock;
+                    DecryptedBlocks.Add(DecodedBlockB.ToArray());
+                }
+                // разделяем на блоки по 1 байту и перетасовываем обрато морфленное сообщение
+                List<byte[]> DecryptedDeSwappedBlocks = DeRandomSwapBlocks(SplitToBlocks(UnionBlocksToArray(DecryptedBlocks), 1), new FFxTG_RNG(seed)); // ******
+                // делаем ДЕ морф исходного сообщения
+                byte[] DeMorphedMessage = RestoreBytesFromMorphed(UnionBlocksToArray(DecryptedDeSwappedBlocks), MTable);
                 return DeMorphedMessage;
             }
         }

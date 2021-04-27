@@ -150,6 +150,33 @@ namespace LHXORwCDChiper
         }
     }
 
+    class CRC32
+    {
+        public static uint Compute(byte[] source)
+        {
+            uint[] crc_table = new uint[256];
+            uint crc;
+            for (uint i = 0; i < 256; i++)
+            {
+                crc = i;
+                for (uint j = 0; j < 8; j++)
+                    crc = (crc & 1) != 0 ? (crc >> 1) ^ 0xEDB88320 : crc >> 1;
+
+                crc_table[i] = crc;
+            };
+
+            crc = 0xFFFFFFFF;
+
+            foreach (byte s in source)
+            {
+                crc = crc_table[(crc ^ s) & 0xFF] ^ (crc >> 8);
+            }
+
+            crc ^= 0xFFFFFFFF;
+            return crc;
+        }
+    }
+
     class FFxTG_RNG
     {
         private byte[] seed;
@@ -187,7 +214,61 @@ namespace LHXORwCDChiper
             return (int)((max - min) * x + min);
         }
     }
-    
+
+    class FFxTG_RNG_32
+    {
+        private byte[] seed; // 4 byte (crc32 of 2 last bytes on current seed)
+        public FFxTG_RNG_32(byte[] seed)
+        {
+           // if (seed < 0)
+             //   throw new Exception("Bad seed");
+            this.seed = seed;// BitConverter.GetBytes(seed).Take(4).ToArray();
+        }
+
+        public void SetSeed(uint _seed)
+        {
+            this.seed = BitConverter.GetBytes(_seed).Take(4).ToArray();
+        }
+
+        public float Next()
+        {
+            byte[] crcBytes     = BitConverter.GetBytes(CRC32.Compute(this.seed));                              // crc32 от сида 4 байта
+           // foreach (var b in crcBytes) { Console.WriteLine(b); }
+            //Console.WriteLine();
+            byte[] First4Bytes  = BitConverter.GetBytes(CRC32.Compute(crcBytes.Take(2).ToArray()));             // 2 первых байта от сида в crc32 = 4 байта
+           // foreach (var b in crcBytes.Take(2).ToArray()) { Console.WriteLine("f " +b); }
+           // foreach (var b in crcBytes.Skip(2).Take(2).ToArray()) { Console.WriteLine("s " +b); }
+           // foreach (var b in First4Bytes) { Console.WriteLine(b); }
+           // Console.WriteLine();
+            this.seed           = BitConverter.GetBytes(CRC32.Compute(crcBytes.Skip(2).Take(2).ToArray()));     // 2 послдних байта от сида  в crc32 = 4 байта
+           // foreach(var b in this.seed) { Console.WriteLine(b); } 
+           // Console.WriteLine();
+            uint crc = First4Bytes[0];
+           // Console.WriteLine(crc);
+            crc = crc << 8;
+           // Console.WriteLine(crc);
+            crc += First4Bytes[1];
+           // Console.WriteLine(crc);
+            crc = crc << 8;
+           // Console.WriteLine(crc);
+            crc += First4Bytes[2];
+           // Console.WriteLine(crc);
+            crc = crc << 8;
+           // Console.WriteLine(crc);
+            crc += First4Bytes[3];
+           // Console.WriteLine(crc);
+            crc = crc << 8;
+           // Console.WriteLine(crc);
+            return crc / 4294967295f;
+        }
+
+        public int Next(int min, int max)
+        {
+            float x = this.Next();
+            return (int)((max - min) * x + min);
+        }
+    }
+
     class LHXORwCD
     {
         // вычислить сид из массива байт

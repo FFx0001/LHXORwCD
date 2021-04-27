@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Text;
 
 namespace LHXORwCDChiper
@@ -7,11 +8,23 @@ namespace LHXORwCDChiper
     {
         static void Main(string[] args)
         {
-            
+            var ff = new FFxTG_RNG_32(new byte[] { 0, 0, 0, 0 });
+            for (int i = 0; i < 30; i++)
+            {
+                //File.AppendAllText("d:\\random.txt", ff.Next() +" ");
+                Console.WriteLine(ff.Next(10000,100000));
+            }
+           
 
+            
+           
+            Console.WriteLine("----");
+          
+
+            Console.ReadKey();
             string value = "Разнообразный и богатый опыт консультация с широким активом способствует подготовки и реализации систем массового участия. Разнообразный и богатый опыт реализация намеченных плановых заданий требуют определения и уточнения систем массового участия. С другой стороны новая модель организационной деятельности позволяет оценить значение соответствующий условий активизации. С другой стороны рамки и место обучения кадров позволяет выполнять важные задания по разработке дальнейших направлений развития.";
             byte[] Message = Encoding.UTF8.GetBytes(value);
-            byte[] Password = Encoding.UTF8.GetBytes("!@3а23в34ау69");
+            byte[] Password = Encoding.UTF8.GetBytes("а23в34ау69");
             int BlockSize = 16; // размер блока 64 миксимум (если используется режим с блоками)
             int MaxDifficallity = 512;// сложность алгоритма (указать 1 если требуется минимальная)
             Console.WriteLine("Original text:");
